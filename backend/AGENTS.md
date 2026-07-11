@@ -159,8 +159,11 @@ real assertions when the combined-workflow orchestrator ships).
 ```bash
 # Default runner — all 11 F4 active + 2 F5 voiceover re-binding +
 # 22 Phase 2 BDD = 35 BDD scenarios. The 2 defer-combined +
-# 2 defer-scaling + 1 slow test are filtered out:
-cd backend && uv run pytest tests/bdd -q --no-header -m 'not defer_combined and not defer_scaling and not slow'
+# 2 defer-scaling + 1 slow test are all excluded by default via
+# pyproject.toml `[tool.pytest.ini_options].addopts` (pytest takes the
+# last `-m`, so the addopts wins unless an explicit `-m defer_scaling` /
+# `-m defer_combined` / `-m slow` is passed below):
+cd backend && uv run pytest tests/bdd -q --no-header
 
 # Defer-combined scenarios (the Phase 4 re-enable hook):
 cd backend && uv run pytest tests/bdd -m defer_combined -q --no-header

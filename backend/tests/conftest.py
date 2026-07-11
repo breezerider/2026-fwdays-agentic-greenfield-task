@@ -39,6 +39,7 @@ import contextlib
 import logging
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -146,6 +147,33 @@ def nltk_data() -> None:
     from epubtv.tools.bake_nltk import bake
 
     bake()
+
+
+# ---------------------------------------------------------------------------
+# Chapter HTML fixture auto-regeneration.
+# ---------------------------------------------------------------------------
+#
+# ``tests/fixtures/chapters/*.html`` are gitignored generated outputs from
+# the sibling ``build_*.py`` scripts. If they are missing (fresh clone,
+# nuked ``.gitignore``-ignored tree, CI cache miss), tests that read them
+# (notably ``test_sentence_chunker``) fail with ``FileNotFoundError`` before
+# exercising any assertion. This session-scoped autouse fixture regenerates
+# whichever outputs are absent — the build scripts are deterministic
+# (hand-crafted sentences + static HTML) and the regeneration is cheap
+# (microseconds). The fixture is autouse so it runs before any test that
+# imports ``backend/tests/conftest.py``; the per-file build script is only
+# invoked when its output is missing.
+@pytest.fixture(scope="session", autouse=True)
+def _ensure_chapter_fixtures() -> None:
+    chapters_dir = Path(__file__).resolve().parent / "fixtures" / "chapters"
+    for script in ("build_100_sentences.py", "build_structural_tags_20.py"):
+        out_name = script.replace("build_", "").replace(".py", ".html")
+        if not (chapters_dir / out_name).exists():
+            subprocess.run(  # noqa: S603 — deterministic local dev script
+                [sys.executable, str(chapters_dir / script)],  # noqa: S607
+                check=True,
+                cwd=chapters_dir,
+            )
 
 
 # ---------------------------------------------------------------------------

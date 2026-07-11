@@ -75,6 +75,11 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Default marker filter: exclude `defer_scaling` (D-02 post-sprint hardening)
+# and `defer_combined` (Phase 4 combined-workflow re-enable hook). To opt
+# in, pass an explicit `-m` (e.g. `pytest -m defer_scaling`) — pytest
+# takes the last `-m` expression, so the command-line flag wins.
+addopts = "-m 'not defer_scaling and not defer_combined and not slow'"
 markers = [
     "api: REST + WS contract tests via httpx.ASGITransport against FastAPI",
     "integration: end-to-end slice tests with fixtures",

@@ -29,6 +29,7 @@ data/
 # Test fixtures — regenerated outputs are gitignored per D-01;
 # only the generator script (tools/build_fixtures.py) is committed.
 tests/fixtures/epubs/*.epub
+tests/fixtures/chapters/*.html
 
 # Type-check / coverage
 .mypy_cache/
