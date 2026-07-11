@@ -17,12 +17,12 @@
 import path from "node:path";
 import { expect } from "@playwright/test";
 
-import { UploadPage } from "../pom/UploadPage";
 // Quick 20260711-0910: opt the demo recording into the visual helper
 // (mouse trail + focus outline) — the spec file imports the
 // fixture's `test` so the helper auto-injects via
 // `context.addInitScript({ path: visual-helper.js })` in beforeEach.
 import { test } from "../fixtures/visual-helper-fixture";
+import { UploadPage } from "../pom/UploadPage";
 
 const FIXTURES_DIR = path.resolve(__dirname, "../../../backend/tests/fixtures/epubs");
 
