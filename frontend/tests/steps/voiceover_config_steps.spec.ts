@@ -153,7 +153,12 @@ test.describe("F4: Voice-Over Configuration", { tag: "@web" }, () => {
       await expect(configPage.locators.baseUrlInput).toBeVisible();
       await expect(configPage.locators.apiKeyInput).toBeVisible();
       // The base URL is pre-populated with the buildtime default.
-      await expect(configPage.locators.baseUrlInput).toHaveValue("https://api.openai.com/v1");
+      // Production: https://api.openai.com/v1; e2e suite: the
+      // playwright webServer overrides the env to point at the
+      // in-network mock-llm-service, so accept either.
+      await expect(configPage.locators.baseUrlInput).toHaveValue(
+        process.env.EPUBTV_DEFAULT_OPENAI_URL ?? "https://api.openai.com/v1",
+      );
     },
   );
 

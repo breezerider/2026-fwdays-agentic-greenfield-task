@@ -1,5 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Mirror the env-var override the webServer uvicorn command sets, so
+// the test-runner process can read the same `EPUBTV_DEFAULT_OPENAI_URL`
+// when the base-url-default assertion checks the form input. The
+// e2e suite runs against the in-network mock-llm-service; production
+// defaults to `https://api.openai.com/v1`.
+process.env.EPUBTV_DEFAULT_OPENAI_URL ??= "http://127.0.0.1:8765/v1";
+process.env.EPUBTV_DEFAULT_OLLAMA_URL ??= "http://127.0.0.1:8765";
+
 /**
  * Playwright config for the F1 @web slice.
  *
@@ -67,17 +75,39 @@ export default defineConfig({
 
   globalSetup: require.resolve("./tests/global-setup.ts"),
 
-  webServer: {
-    command:
-      "cd ../backend && EPUBTV_SERVE_STATIC=true " +
-      "EPUBTV_FRONTEND_OUT=../frontend/out " +
-      "EPUBTV_DB_PATH=./db/test.db " +
-      "EPUBTV_SCRATCH_DIR=./scratch/test " +
-      "uv run uvicorn epubtv.main:app --port 5173 --host 127.0.0.1 --workers 1",
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-    stdout: "pipe",
-    stderr: "pipe",
-  },
+  // Two `webServer` entries — Playwright waits for BOTH ports to be
+  // listening before running any test. The uvicorn backend (5173)
+  // talks to the mock-llm-service (8765) via the per-provider URL
+  // env vars (EPUBTV_DEFAULT_OPENAI_URL / EPUBTV_DEFAULT_OLLAMA_URL);
+  // without the mock, every POST /api/v1/providers/.../models call
+  // (the F2 "Load Model List" + F5 WS happy path) hangs the request
+  // until the per-test 5s expect timeout, flaking those two flows.
+  webServer: [
+    {
+      command:
+        "cd ../backend && uv run python -m epubtv.tools.mock_llm_service",
+      port: 8765,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      command:
+        "cd ../backend && EPUBTV_SERVE_STATIC=true " +
+        "EPUBTV_FRONTEND_OUT=../frontend/out " +
+        "EPUBTV_DB_PATH=./db/test.db " +
+        "EPUBTV_SCRATCH_DIR=./scratch/test " +
+        // OpenAI-compatible SDK appends ``/v1/models`` to the host;
+        // Ollama SDK appends ``/api/tags`` to the host root (no /v1).
+        "EPUBTV_DEFAULT_OPENAI_URL=http://127.0.0.1:8765/v1 " +
+        "EPUBTV_DEFAULT_OLLAMA_URL=http://127.0.0.1:8765 " +
+        "uv run uvicorn epubtv.main:app --port 5173 --host 127.0.0.1 --workers 1",
+      port: 5173,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  ],
 });

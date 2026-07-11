@@ -389,8 +389,12 @@ test.describe("F2: Translation Configuration", { tag: "@web" }, () => {
     // The OpenAI-compatible key form is visible by default.
     await expect(configPage.locators.openaiApikeyForm).toBeVisible();
     // The base URL field for OpenAI is pre-populated with the
-    // buildtime default (https://api.openai.com/v1).
-    await expect(configPage.locators.baseUrlInput).toHaveValue("https://api.openai.com/v1");
+    // buildtime default. Production: https://api.openai.com/v1; e2e
+    // suite: the playwright webServer overrides the env to point at
+    // the in-network mock-llm-service, so accept either.
+    await expect(configPage.locators.baseUrlInput).toHaveValue(
+      process.env.EPUBTV_DEFAULT_OPENAI_URL ?? "https://api.openai.com/v1",
+    );
   });
 
   // F2 @web @smoke — Load Model List button populates the model dropdown
